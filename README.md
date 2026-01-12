@@ -41,5 +41,5 @@ The skill triggers automatically on keywords like:
 
 ## 📜 Credits
 
-- **Skill Author**: [Bowtiedswan](https://x.com/Bowtiedswan)
 - **Research Paper**: [Recursive Language Modeling](https://arxiv.org/pdf/2512.24601)
+- **Skill Author**: [Bowtiedswan](https://x.com/Bowtiedswan)
