@@ -18,22 +18,30 @@ When this skill is active, you are the **Root Node** of a Recursive Language Mod
 
 ## Protocol: The RLM Loop
 
-### Phase 1: Index & Filter (The "Peeking" Phase)
+### Phase 1: Choose Your Engine
+Decide based on the nature of the data:
+
+| Engine | Use Case | Tool |
+|--------|----------|------|
+| **Native Mode** | General codebase traversal, finding files, structure. | `find`, `grep`, `bash` |
+| **Strict Mode** | Dense data analysis (logs, CSVs, massive single files). | `python3 ~/.claude/skills/rlm/rlm.py` |
+
+### Phase 2: Index & Filter (The "Peeking" Phase)
 **Goal**: Identify relevant data without loading it.
-1.  **Map the Territory**: Use `find`, `ls -R`, or `tree` to understand structure.
-2.  **Code-First Search**: Use `grep`, `ripgrep` (if available), or `ast-grep` to find *candidates*.
-    *   *Anti-Pattern*: Reading file contents to check if they are relevant.
+1.  **Native**: Use `find` or `grep -l`.
+2.  **Strict**: Use `python3 .../rlm.py peek "query"`.
     *   *RLM Pattern*: Grepping for import statements, class names, or definitions to build a list of relevant paths.
 
-### Phase 2: Parallel Map (The "Sub-Query" Phase)
+### Phase 3: Parallel Map (The "Sub-Query" Phase)
 **Goal**: Process chunks in parallel using fresh contexts.
-1.  **Divide**: Split the work into atomic units (e.g., "Analyze file A", "Check class B").
+1.  **Divide**: Split the work into atomic units.
+    - **Strict Mode**: `python3 .../rlm.py chunk --pattern "*.log"` -> Returns JSON chunks.
 2.  **Spawn**: Use `background_task` to launch parallel agents.
     *   *Constraint*: Launch at least 3-5 agents in parallel for broad tasks.
-    *   *Prompting*: Give each background agent ONE specific file path and ONE specific question.
-    *   *Format*: `background_task(agent="explore", prompt="Read <filepath>. Analyze <specific_question>. Return findings in JSON format.")`
+    *   *Prompting*: Give each background agent ONE specific chunk or file path.
+    *   *Format*: `background_task(agent="explore", prompt="Analyze chunk #5 of big.log: {content}...")`
 
-### Phase 3: Reduce & Synthesize (The "Aggregation" Phase)
+### Phase 4: Reduce & Synthesize (The "Aggregation" Phase)
 **Goal**: Combine results into a coherent answer.
 1.  **Collect**: Read the outputs from `background_task` (via `background_output`).
 2.  **Synthesize**: Look for patterns, consensus, or specific answers in the aggregated data.
@@ -43,8 +51,8 @@ When this skill is active, you are the **Root Node** of a Recursive Language Mod
 
 1.  **NEVER** use `cat *` or read more than 3-5 files into your main context at once.
 2.  **ALWAYS** prefer `background_task` for reading/analyzing file contents when the file count > 1.
-3.  **ALWAYS** structure background agent prompts to return structured data (e.g., "List the functions found," "Return TRUE/FALSE if vulnerable").
-4.  **Python is your Memory**: If you need to track state across 50 files, write a Python script to scan them and output a summary, rather than reading them yourself.
+3.  **Use `rlm.py`** for programmatic slicing of large files that `grep` can't handle well.
+4.  **Python is your Memory**: If you need to track state across 50 files, write a Python script (or use `rlm.py`) to scan them and output a summary.
 
 ## Example Workflow: "Find all API endpoints and check for Auth"
 
